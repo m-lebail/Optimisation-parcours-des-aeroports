@@ -8,7 +8,7 @@ Random.seed!(1234)
 
 include("lecture_distances.jl")
 
-file = "instances_aerodromes-20230918/instance_70_1.txt"
+file = "instances_aerodromes-20230918/instance_20_1.txt"
 #Get instance data
 n,d,f,Amin,Nr,R,regions,coords,D = readInstance(file)
 
@@ -26,15 +26,15 @@ n,d,f,Amin,Nr,R,regions,coords,D = readInstance(file)
 model = JuMP.Model(Gurobi.Optimizer)
 
 #variables
-@variable(model,x[i in 1:n,j in 1:n],Bin)
+#@variable(model,x[i in 1:n,j in 1:n],Bin)
 
 #On se contente de la relaxation continue du problème au départ, car on cherche seulement
 #à déterminer les contraintes de soustours à ajouter pour obtenir notre solution
-#@variable(model,x[i in 1:n,j in 1:n] >= 0)
+@variable(model,x[i in 1:n,j in 1:n] >= 0)
 
 #variables bianires, y[i] à 1 si l'aéroport i est visité
-@variable(model,y[i in 1:n],Bin)
-#@variable(model,y[i in 1:n] >= 0)
+#@variable(model,y[i in 1:n],Bin)
+@variable(model,y[i in 1:n] >= 0)
 
 #fonction objective
 @objective(model,Min, sum( sum(D[i,j]*x[i,j] for j in 1:n ) for i in 1:n )  )
@@ -78,9 +78,9 @@ end
 JuMP.optimize!(model)
 
 #affichage des résultats
-obj_value = JuMP.objective_value(model)
+obj_value_chemin = JuMP.objective_value(model)
 println("##############################################################################################")
-println("Objective value : ", obj_value)
+println("Valeur objectif pour le chemin entre les aéroports : ", obj_value_chemin)
 println("##############################################################################################")
 
 #Solution
@@ -148,8 +148,7 @@ while obj_value_soustours>0 && iter < 100
     #On récupère les numéros des noeuds qui composent S
     global S_indices = findall(x -> x == 1.0, S_star)
     global not_S_indices = findall(x -> x == 0.0, S_star)
-    println("S_indices : ",S_indices)
-
+   
     #On ajoute la contrainte sur le sous-ensemble S que l'on a identifié
     @constraint(model,[k in S_indices], sum( x[i,j] for i in S_indices for j in not_S_indices) >= sum( x[k,j] for j in 1:n ) )
     
@@ -157,7 +156,7 @@ while obj_value_soustours>0 && iter < 100
     JuMP.optimize!(model)
 
     #affichage des résultats
-    obj_value_chemin = JuMP.objective_value(model)
+    global obj_value_chemin = JuMP.objective_value(model)
     println("##############################################################################################")
     println("Valeur objectif pour le chemin entre les aéroports : ", obj_value_chemin)
     println("##############################################################################################")
@@ -193,23 +192,34 @@ while obj_value_soustours>0 && iter < 100
 
 end
 
-
+println("")
+println("####################################################################")
 println("Nombre de contraintes soustrours ajoutées : ", iter-1)
+println("####################################################################")
+println("")
 
 #On peut maintenant résoudre finalement notre problème de départ à variables entières
-# for i in 1:n, j in 1:n
-#     set_binary(x[i, j])
-# end
+for i in 1:n, j in 1:n
+    set_binary(x[i, j])
+end
 
-# for i in 1:n
-#     set_binary(y[i])
-# end
+for i in 1:n
+    set_binary(y[i])
+end
 
+#resolution
+JuMP.optimize!(model)
 
+#affichage des résultats
+obj_value_chemin = JuMP.objective_value(model)
 #affichage des résultats
 println("##############################################################################################")
 println("Valeur objectif pour le chemin entre les aéroports : ", obj_value_chemin)
 println("##############################################################################################")
+
+
+x_star=JuMP.value.(x)
+y_star = JuMP.value.(y)
 
 
 indice=d
