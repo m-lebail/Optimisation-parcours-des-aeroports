@@ -7,7 +7,7 @@ using Plots
 Random.seed!(1234)
 
 include("lecture_distances.jl")
-include("creation_arcs.jl")
+
 file = "instances_aerodromes-20230918/instance_70_1.txt"
 #Get instance data
 n,d,f,Amin,Nr,R,regions,coords,D = readInstance(file)

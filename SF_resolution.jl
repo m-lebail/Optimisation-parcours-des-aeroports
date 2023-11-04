@@ -103,6 +103,14 @@ println("Objective value : ", obj_value)
 x_star=JuMP.value.(x)
 z_star = JuMP.value.(z)
 
+
+#affichage des résultats
+println("##############################################################################################")
+println("Valeur objectif pour le chemin entre les aéroports : ", obj_value)
+println("##############################################################################################")
+
+
+
 indice=d
 print(d)
 noeuds=1
@@ -117,6 +125,8 @@ while indice!=f
         end
     end
 end 
+
+
 verif=sum(x_star[i,j] for i in 1:n, j in 1:n)
 println("\nNombre d'arcs activés : ", verif)
 println("Nombres de noeuds visités : ",noeuds)
